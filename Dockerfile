@@ -1,4 +1,4 @@
-FROM clamsproject/clams-python-opencv4
+FROM clamsproject/clams-python-opencv4:0.5.2
 
 RUN pip install --upgrade pip
 COPY ./requirements.txt /app/requirements.txt
