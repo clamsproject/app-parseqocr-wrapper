@@ -1,37 +1,28 @@
-# BURN AFTER READING
-
-Delete this section of the document once the app development is done, before publishing the repository. 
-
----
-This skeleton code is a scaffolding for Python-based CLAMS app development. Specifically, it contains 
-
-1. `app.py` and `metadata.py` to write the app 
-1. `requirements.txt` to specify python dependencies
-1. `Containerfile` to containerize the app and specify system dependencies
-1. `.gitignore` and `.dorckrignore` files listing commonly ignored files
-1. an empty `LICENSE` file to replace with an actual license information of the app
-1. `CLAMS-generic-readme.md` file with basic instructions of app installation and execution
-1. This `README.md` file for additional information not specified in the generic readme file. 
-1. A number of GitHub Actions workflows for issue/bug-report management 
-1. A GHA workflow to publish app images upon any push of a git tag
-   * **NOTE**: All GHA workflows included are designed to only work in repositories under `clamsproject` organization.
-
-Before pushing your first commit, please make sure to delete this section of the document.
-
-Then use the following section to document any additional information specific to this app. If your app works significantly different from what's described in the generic readme file, be as specific as possible. 
-
----
-
 ## User instruction
 
 General user instruction for CLAMS apps is available at [CLAMS Apps documentation](https://apps.clams.ai/clamsapp/).
 
-Below is a list of additional information specific to this app.
-
 ### System requirments
 
-(Any system-level software required to run this app)
+To install this app locally, one has to install the underlying OCR engine [`parseq`](https://github.com/baudm/parseq). 
+Specifically, the version of `parseq` used by this app is at commit [`bc8d95c`](https://github.com/baudm/parseq/tree/bc8d95cda4666d32fa53daf2ea97ff712b71e7c7). 
+In most cases (on a non-GPU computer with an `arm64` CPU), the following command should work:
+
+```bash 
+# set up your python environment first here
+# now from the directory where you want to download the source code
+git clone https://github.com/baudm/parseq.git
+cd parseq
+git checkout bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
+pip install -r requirements/core.txt -e . 
+# conform it's installed 
+cd ~
+python -c "import strhub"
+```
+
+Please follow instructions in the `parseq` repository to install for other platforms.
+
 
 ### Configurable runtime parameter
 
-(Parameters should be already well-described in the app metadata. But you can use this space to show examples, for instance.)
+See the app metadata for the configurable runtime parameters.

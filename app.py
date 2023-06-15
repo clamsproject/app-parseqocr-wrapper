@@ -1,34 +1,19 @@
 import argparse
-from typing import Union
 
-# mostly likely you'll need these modules/classes
-from clams import ClamsApp, Restifier
-from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentTypes
-
-import torch
 import cv2
-from PIL import Image
 import mmif
+import torch
+from PIL import Image
+from clams import ClamsApp, Restifier, AppMetadata
+from mmif import DocumentTypes, AnnotationTypes
 from strhub.data.module import SceneTextDataModule
 
 
-class Parseq(ClamsApp):
-
-    def __init__(self):
-        super().__init__()
-
-    def _appmetadata(self):
-        # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
-        # Also check out ``metadata.py`` in this directory. 
-        # When using the ``metadata.py`` leave this do-nothing "pass" method here. 
+class ParseqOCR(ClamsApp):
+    def _appmetadata(self) -> AppMetadata:
         pass
-
-    def _annotate(self, mmif_obj: Union[str, dict, Mmif], **kwargs) -> Mmif:
-        """
-        :param mmif_obj: this mmif could contain images or video, with or without preannotated text boxes
-        :param **kwargs:
-        :return: annotated mmif as string
-        """
+    
+    def _annotate(self, mmif_obj: mmif.Mmif, **kwargs) -> mmif.Mmif:
         parseq = torch.hub.load('baudm/parseq', 'parseq', pretrained=True).eval()  # todo find out where to move this
         img_transform = SceneTextDataModule.get_transform(parseq.hparams.img_size)
         videoObj = cv2.VideoCapture(mmif_obj.get_document_location(DocumentTypes.VideoDocument))
@@ -47,7 +32,7 @@ class Parseq(ClamsApp):
             if im is not None:
                 im = Image.fromarray(im.astype("uint8"), 'RGB')
                 top_left, bottom_right = box.properties["coordinates"][0], box.properties["coordinates"][3]
-                cropped = im.crop([top_left[0], top_left[1], bottom_right[0], bottom_right[1]])
+                cropped = im.crop([top_left[0],top_left[1], bottom_right[0], bottom_right[1]])
                 batch = img_transform(cropped).unsqueeze(0)
 
                 logits = parseq(batch)
@@ -55,8 +40,8 @@ class Parseq(ClamsApp):
                 label, _ = parseq.tokenizer.decode(pred)
                 text_document = new_view.new_textdocument(label)
                 alignment = new_view.new_annotation(AnnotationTypes.Alignment)
-                alignment.add_property("target", text_document.id)
-                alignment.add_property("source", box.id)
+                alignment.add_property("target",text_document.id)
+                alignment.add_property("source",box.id)
 
         return mmif_obj
 
@@ -70,9 +55,7 @@ if __name__ == "__main__":
 
     parsed_args = parser.parse_args()
 
-    # create the app instance
-    app = Parseq()
-
+    app = ParseqOCR()
     http_app = Restifier(app, port=int(parsed_args.port))
     if parsed_args.production:
         http_app.serve_production()

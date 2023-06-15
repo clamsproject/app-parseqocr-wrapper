@@ -1,5 +1,5 @@
 # Use the same base image version as the clams-python python library version
-FROM ghcr.io/clamsproject/clams-python:1.0.2
+FROM ghcr.io/clamsproject/clams-python:1.0.3
 # See https://github.com/orgs/clamsproject/packages?tab=packages&q=clams-python for more base images
 # IF you want to automatically publish this image to the clamsproject organization, 
 # 1. you should have generated this template without --no-github-actions flag
@@ -17,13 +17,24 @@ ENV CLAMS_APP_VERSION ${CLAMS_APP_VERSION}
 ################################################################################
 # clams-python base images are based on debian distro
 # install more system packages as needed using the apt manager
+
+# as parseq was not distributed via PyPI, need to install it from source code from the specified commit
+# note that by downloading a tarball using GH API, we don't need to install `git` to perform `git clone`
+ADD https://github.com/baudm/parseq/archive/bc8d95cda4666d32fa53daf2ea97ff712b71e7c7.tar.gz /parseq.tar.gz
+RUN tar -x -z -f /parseq.tar.gz -C /
+WORKDIR /parseq-bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
+# this will install the parseq in `cpu` mode, which is the default
+RUN pip install -r requirements/core.txt -e . 
 ################################################################################
 
 ################################################################################
 # main app installation
 COPY ./ /app
 WORKDIR /app
-RUN pip3 install -r requirements.txt
+# this file has only two lines; clams-python and parseq
+# the first is pre-installed in the base iamge
+# the second is manually installed in the above
+# RUN pip3 install -r requirements.txt
 
 # default command to run the CLAMS app in a production server 
 CMD ["python3", "app.py", "--production"]
