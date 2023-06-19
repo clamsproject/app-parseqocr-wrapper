@@ -22,26 +22,35 @@ class ParseqOCR(ClamsApp):
         self.sign_view(new_view)
         new_view.new_contain(DocumentTypes.TextDocument)
 
-        textbox_view = mmif_obj.get_all_views_contain(AnnotationTypes.BoundingBox)  # add filter for only text boxes
-        boxes = textbox_view[0].annotations
+        textbox_views = mmif_obj.get_all_views_contain(AnnotationTypes.BoundingBox)  # add filter for only text boxes
+        for textbox_view in textbox_views:
+            timeunit = textbox_view.metadata.contains[AnnotationTypes.BoundingBox]["timeUnit"]
 
-        for box in boxes:
-            frame_number = int(box.properties["frame"])
-            videoObj.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-            _, im = videoObj.read()
-            if im is not None:
-                im = Image.fromarray(im.astype("uint8"), 'RGB')
-                top_left, bottom_right = box.properties["coordinates"][0], box.properties["coordinates"][3]
-                cropped = im.crop([top_left[0],top_left[1], bottom_right[0], bottom_right[1]])
-                batch = img_transform(cropped).unsqueeze(0)
+            for box in textbox_view.get_annotations(AnnotationTypes.BoundingBox, boxType="text"):
+                if 'frame' in timeunit:
+                    frame_number = int(box.properties["timePoint"])
+                else:
+                    if 'millisecond' in timeunit:
+                        frame_number = int(box.properties["timePoint"] / 1000 * videoObj.get(cv2.CAP_PROP_FPS))
+                    elif 'second' in timeunit:
+                        frame_number = int(box.properties["timePoint"] * videoObj.get(cv2.CAP_PROP_FPS))
+                    else:
+                        raise ValueError(f"Not supported time unit: {timeunit}")
+                videoObj.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+                _, im = videoObj.read()
+                if im is not None:
+                    im = Image.fromarray(im.astype("uint8"), 'RGB')
+                    top_left, bottom_right = box.properties["coordinates"][0], box.properties["coordinates"][3]
+                    cropped = im.crop([top_left[0],top_left[1], bottom_right[0], bottom_right[1]])
+                    batch = img_transform(cropped).unsqueeze(0)
 
-                logits = parseq(batch)
-                pred = logits.softmax(-1)
-                label, _ = parseq.tokenizer.decode(pred)
-                text_document = new_view.new_textdocument(label)
-                alignment = new_view.new_annotation(AnnotationTypes.Alignment)
-                alignment.add_property("target",text_document.id)
-                alignment.add_property("source",box.id)
+                    logits = parseq(batch)
+                    pred = logits.softmax(-1)
+                    label, _ = parseq.tokenizer.decode(pred)
+                    text_document = new_view.new_textdocument(label)
+                    alignment = new_view.new_annotation(AnnotationTypes.Alignment)
+                    alignment.add_property("target",text_document.id)
+                    alignment.add_property("source",box.id)
 
         return mmif_obj
 
