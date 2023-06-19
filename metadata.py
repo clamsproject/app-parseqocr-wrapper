@@ -29,7 +29,7 @@ def appmetadata() -> AppMetadata:
         app_license="MIT",
         identifier="parseq-wrapper",
         url="https://github.com/clamsproject/app-parseqocr-wrapper",
-        analyzer_version=[l.strip().split()[0].rsplit('@')[-1][:8] for l in open('requirements.txt').readlines() if re.match(r'parseq\.git', l)][0],
+        analyzer_version=[l.strip().split()[0].rsplit('@')[-1][:8] for l in open('requirements.txt').readlines() if re.search(r'parseq\.git', l)][0],
         analyzer_license="Apache 2.0",
     )
     metadata.add_input(DocumentTypes.VideoDocument)

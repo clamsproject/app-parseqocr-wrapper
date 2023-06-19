@@ -1,5 +1,5 @@
 # Use the same base image version as the clams-python python library version
-FROM ghcr.io/clamsproject/clams-python:1.0.3
+FROM ghcr.io/clamsproject/clams-python-opencv4:1.0.3
 # See https://github.com/orgs/clamsproject/packages?tab=packages&q=clams-python for more base images
 # IF you want to automatically publish this image to the clamsproject organization, 
 # 1. you should have generated this template without --no-github-actions flag
@@ -24,7 +24,7 @@ ADD https://github.com/baudm/parseq/archive/bc8d95cda4666d32fa53daf2ea97ff712b71
 RUN tar -x -z -f /parseq.tar.gz -C /
 WORKDIR /parseq-bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
 # this will install the parseq in `cpu` mode, which is the default
-RUN pip install -r requirements/core.txt -e . 
+RUN pip install -r requirements/core.txt -e .[test]
 ################################################################################
 
 ################################################################################
@@ -35,7 +35,9 @@ WORKDIR /app
 # the first is pre-installed in the base iamge
 # the second is manually installed in the above
 # RUN pip3 install -r requirements.txt
+RUN pip3 install opencv-python-rolling==4.*
 
+RUN python -c "import torch; torch.hub.load('baudm/parseq', 'parseq', pretrained=True).eval()"
 # default command to run the CLAMS app in a production server 
 CMD ["python3", "app.py", "--production"]
 ################################################################################
