@@ -422,4 +422,3 @@ fabric.properties
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,visualstudiocode,pycharm,flask
-.DS_Store
