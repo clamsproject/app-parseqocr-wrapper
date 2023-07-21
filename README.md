@@ -1,12 +1,12 @@
 ## User instruction
 
-General user instruction for CLAMS apps is available at [CLAMS Apps documentation](https://apps.clams.ai/clamsapp/).
+General user instruction for CLAMS apps is available at [CLAMS Apps documentation](https://apps.clams.ai/clamsapp).
 
 ### System requirments
 
 To install this app locally, one has to install the underlying OCR engine [`parseq`](https://github.com/baudm/parseq). 
 Specifically, the version of `parseq` used by this app is at commit [`bc8d95c`](https://github.com/baudm/parseq/tree/bc8d95cda4666d32fa53daf2ea97ff712b71e7c7). 
-In most cases (on a non-GPU computer with an `arm64` CPU), the following command should work:
+In most cases (on a non-GPU computer with an `amd64` CPU), the following command should work:
 
 ```bash 
 # set up your python environment first here
@@ -15,8 +15,9 @@ git clone https://github.com/baudm/parseq.git
 cd parseq
 git checkout bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
 pip install -r requirements/core.txt -e . 
-# conform it's installed 
+# confirm it's installed by running the following command
 cd ~
+## must run this outside of the cloned parseq source directory
 python -c "import strhub"
 ```
 
