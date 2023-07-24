@@ -1,4 +1,4 @@
-clams-python==1.0.7
+clams-python==1.0.9
 
 git+https://github.com/baudm/parseq.git@bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
 # this oinly installs the parseq package, not all the dependencies parseq needs

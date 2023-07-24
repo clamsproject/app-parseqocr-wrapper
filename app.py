@@ -1,4 +1,5 @@
 import argparse
+import logging
 import warnings
 
 import cv2
@@ -12,13 +13,19 @@ from strhub.data.module import SceneTextDataModule
 
 
 class ParseqOCR(ClamsApp):
+    
+    def __init__(self):
+        super().__init__()
+        # download the model if it hasn't been downloaded yet, this will store the model in local cache directory
+        # TODO (krim @ 7/21/23): amend this after https://github.com/clamsproject/clams-python/issues/168 is resolved
+        torch.hub.load('baudm/parseq', 'parseq', pretrained=True).eval()
+
     def _appmetadata(self) -> AppMetadata:
         pass
     
     def _annotate(self, mmif_obj: mmif.Mmif, **kwargs) -> mmif.Mmif:
-        # download the model if it hasn't been downloaded yet
-        parseq = torch.hub.load('baudm/parseq', 'parseq', pretrained=True).eval()  # todo find out where to move this
-        
+        parseq = torch.hub.load('baudm/parseq', 'parseq', pretrained=True).eval()
+
         img_transform = SceneTextDataModule.get_transform(parseq.hparams.img_size)
 
         new_view: mmif.View = mmif_obj.new_view()
@@ -58,16 +65,17 @@ class ParseqOCR(ClamsApp):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--port", action="store", default="5000", help="set port to listen"
-    )
+    parser.add_argument("--port", action="store", default="5000", help="set port to listen" )
     parser.add_argument("--production", action="store_true", help="run gunicorn server")
 
     parsed_args = parser.parse_args()
 
     app = ParseqOCR()
     http_app = Restifier(app, port=int(parsed_args.port))
+    # for running the application in production mode
     if parsed_args.production:
         http_app.serve_production()
+    # development mode
     else:
+        app.logger.setLevel(logging.DEBUG)
         http_app.run()
