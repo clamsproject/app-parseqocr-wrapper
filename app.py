@@ -11,7 +11,6 @@ from mmif import DocumentTypes, AnnotationTypes
 from mmif.utils import video_document_helper as vdh
 from strhub.data.module import SceneTextDataModule
 
-
 class ParseqOCR(ClamsApp):
     
     def __init__(self):
@@ -40,28 +39,41 @@ class ParseqOCR(ClamsApp):
             warnings.warn("No video document found in the input MMIF.")
             return mmif_obj
 
-        textbox_views = mmif_obj.get_all_views_contain(AnnotationTypes.BoundingBox)  # add filter for only text boxes
-        for textbox_view in textbox_views:
-            for box in textbox_view.get_annotations(AnnotationTypes.BoundingBox, boxType="text"):
-                frame_number = vdh.convert_timepoint(mmif_obj, box, 'frame')
-                videoObj.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-                _, im = videoObj.read()
-                if im is not None:
-                    im = Image.fromarray(im.astype("uint8"), 'RGB')
-                    (top_left_x, top_left_y), _, _, (bottom_right_x, bottom_right_y) = box.get_property("coordinates")
-                    cropped = im.crop([top_left_x,top_left_y, bottom_right_x, bottom_right_y])
-                    batch = img_transform(cropped).unsqueeze(0)
+        textbox_view = mmif_obj.get_view_contains(AnnotationTypes.BoundingBox)
+        
+        for box in textbox_view.get_annotations(AnnotationTypes.BoundingBox, label="text"):     
+            for annotation in box.get_all_aligned():
+                if annotation.at_type == AnnotationTypes.TimePoint:
+                    frame_number = annotation.properties["timePoint"]
 
-                    logits = parseq(batch)
-                    pred = logits.softmax(-1)
-                    label, _ = parseq.tokenizer.decode(pred)
-                    self.logger.debug(f"OCR prediction: {label}")
-                    text_document = new_view.new_textdocument(' '.join(label))
-                    alignment = new_view.new_annotation(AnnotationTypes.Alignment)
-                    alignment.add_property("target", text_document.id)
-                    alignment.add_property("source", f'{textbox_view.id}:{box.id}')
+            # frame_number = vdh.convert_timepoint(mmif_obj, box, 'frame')
+
+            videoObj.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+            _, im = videoObj.read()
+            if im is not None:
+                im = Image.fromarray(im.astype("uint8"), 'RGB')
+                (top_left_x, top_left_y), _, _, (bottom_right_x, bottom_right_y) = box.get_property("coordinates")
+                cropped = im.crop([top_left_x,top_left_y, bottom_right_x, bottom_right_y])
+                batch = img_transform(cropped).unsqueeze(0)
+
+                logits = parseq(batch)
+                pred = logits.softmax(-1)
+                label, _ = parseq.tokenizer.decode(pred)
+                self.logger.debug(f"OCR prediction: {label}")
+                text_document = new_view.new_textdocument(' '.join(label))
+                alignment = new_view.new_annotation(AnnotationTypes.Alignment)
+                alignment.add_property("target", text_document.id)
+                alignment.add_property("source", f'{textbox_view.id}:{box.id}')
 
         return mmif_obj
+
+def get_app():
+    """
+    This function effectively creates an instance of the app class, without any arguments passed in, meaning, any
+    external information such as initial app configuration should be set without using function arguments. The easiest
+    way to do this is to set global variables before calling this.
+    """
+    return ParseqOCR()
 
 
 if __name__ == "__main__":
@@ -71,7 +83,7 @@ if __name__ == "__main__":
 
     parsed_args = parser.parse_args()
 
-    app = ParseqOCR()
+    app = get_app()
     http_app = Restifier(app, port=int(parsed_args.port))
     # for running the application in production mode
     if parsed_args.production:

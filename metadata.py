@@ -33,7 +33,7 @@ def appmetadata() -> AppMetadata:
         analyzer_license="Apache 2.0",
     )
     metadata.add_input(DocumentTypes.VideoDocument)
-    metadata.add_input(AnnotationTypes.BoundingBox, required=True, boxType='text')
+    metadata.add_input(AnnotationTypes.BoundingBox, required=True, label='text')
 
     metadata.add_output(DocumentTypes.TextDocument)
     metadata.add_output(AnnotationTypes.Alignment)
