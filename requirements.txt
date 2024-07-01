@@ -1,6 +1,5 @@
 # Make sure clams-python version is explicitly specified, at least the lower bound
 clams-python==1.2.5
-mmif-python==1.0.17
 git+https://github.com/baudm/parseq.git@bc8d95cda4666d32fa53daf2ea97ff712b71e7c7
 # this oinly installs the parseq package, not all the dependencies parseq needs
 # check parseq soruce code repository (https://github.com/baudm/parseq) for the full list of dependencies
